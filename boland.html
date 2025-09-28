@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Rugby Career Mode (Boland League)</title>
+    <style>
+        :root {
+            --accent: #0b74de;
+            --muted: #666;
+            --success: #059669;
+            --warning: #d97706;
+            --background: #1E90FF;
+            --text-color: #122;
+            --card-background: white;
+            --border-radius: 8px;
+            --box-shadow: 0 6px 18px rgba(20, 30, 60, 0.06);
+            --padding-sm: 8px;
+            --padding-md: 12px;
+            --gap-md: 18px;
+            --qualification-background: #d1fae5; /* Light Green */
+        }
+
+        body {
+            font-family: Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial;
+            margin: 0;
+            background: var(--background);
+            color: var(--text-color);
+        }
+
+        header {
+            background: linear-gradient(90deg, var(--accent), #036);
+            color: white;
+            padding: 14px 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .wrap {
+            display: grid;
+            grid-template-columns: 320px 1fr 360px;
+            gap: var(--gap-md);
+            padding: var(--gap-md);
+        }
+
+        @media (max-width: 1024px) {
+            .wrap {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: var(--padding-md);
+        }
+
+        .small {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .teams-list, .players-list, .market-list, .scout-reports {
+            max-height: 320px;
+            overflow: auto;
+        }
+        
+        .teams-list { max-height: 300px; }
+        .market-list { max-height: 260px; }
+        .scout-reports { max-height: 280px; }
+        .squad-list { max-height: 300px; overflow: auto; }
+
+        .team-item {
+            padding: var(--padding-sm);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .team-item:hover {
+            background: #eef6ff;
+        }
+
+        .selected {
+            background: #e8f3ff;
+            border-left: 4px solid var(--accent);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 6px;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            font-weight: 600;
+            color: #344;
+        }
+
+        .controls {
+            display: flex;
+            gap: var(--padding-sm);
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #0968c4;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background: #eaeef7;
+            color: #073867;
+        }
+
+        button.secondary:hover {
+            background: #d4dcf2;
+        }
+
+        button.success {
+            background: var(--success);
+        }
+
+        button.success:hover {
+            background: #04825d;
+        }
+
+        button.warning {
+            background: var(--warning);
+        }
+        
+        button.warning:hover {
+            background: #c06905;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .fixture, .market-row, .player-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--padding-sm);
+            border-radius: 6px;
+        }
+
+        .fixture:nth-child(odd), .market-row:nth-child(odd), .player-row:nth-child(odd) {
+            background: #fbfdff;
+        }
+
+        input[type=number] {
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+
+        .progress {
+            height: 8px;
+            background: #eef;
+            border-radius: 6px;
+        }
+
+        footer {
+            padding: var(--padding-md);
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .notice {
+            padding: var(--padding-sm);
+            border-radius: 6px;
+            background: #fff6e6;
+            color: #5a3b00;
+            margin-bottom: var(--padding-md);
+        }
+
+        .scout-card {
+            border-left: 4px solid var(--success);
+            margin: 6px 0;
+            padding: var(--padding-sm);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: var(--padding-md);
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: var(--padding-sm) 12px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .tab:hover {
+            color: var(--accent);
+        }
+
+        .tab.active {
+            border-bottom-color: var(--accent);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .week-display {
+            background: #f0f4f8;
+            padding: var(--padding-sm);
+            border-radius: 6px;
+            margin: var(--padding-sm) 0;
+        }
+
+        .region-filter {
+            margin: var(--padding-sm) 0;
+        }
+
+        .region-filter select {
+            padding: 4px;
+            margin-left: 8px;
+            border-radius: 4px;
+        }
+
+        #notification-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .notification {
+            background: #333;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease-out;
+            opacity: 0.95;
+            min-width: 250px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 0.95; }
+        }
+        
+        .starting-15 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            font-size: 13px;
+        }
+        
+        .starting-15-player {
+            background: #f9f9f9;
+            padding: 6px;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        
+        .starting-15-player .rating { font-weight: bold; color: var(--accent); margin-right: 4px; }
+        .qualification-spot { background-color: var(--qualification-background); }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Rugby Career Mode — Boland League</h1>
+        <div class="small">Six groups of 12 teams. Top 2 from each group advance to the Top 12, then a knockout phase to decide the champion.</div>
+    </header>
+
+    <div class="wrap">
+        <aside class="card">
+            <h3>Your Club</h3>
+            <div id="manager-chooser" class="small">
+                <label class="small">Choose your team:</label>
+                <select id="select-team"></select>
+                <div style="margin-top:8px">Budget: <strong id="budget">-</strong></div>
+                <div style="margin-top:6px">Season: <strong id="season">1</strong></div>
+                <div class="week-display">
+                    <strong>Week <span id="current-week">1</span></strong>
+                    <div class="small" id="week-status">Pre-season training</div>
+                </div>
+                <div style="margin-top:10px" class="controls">
+                    <button id="sim-week" class="success">Simulate Week</button>
+                    <button id="next-season" class="warning">Next Season</button>
+                    <button id="reset" class="secondary">Reset League</button>
+                </div>
+            </div>
+
+            <hr />
+            <h4>Teams</h4>
+            <div class="teams-list" id="teams-list"></div>
+
+            <hr />
+            <div class="small">Legend: W/D/L — Matches won/drawn/lost, BP — Bonus points, PTS — Table points</div>
+        </aside>
+
+        <main>
+            <div class="card">
+                <div class="tabs" id="group-tabs"></div>
+                <h3 id="group-title"></h3>
+                <div id="table-container"></div>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+                <h3>Fixtures & Results</h3>
+                <div id="fixtures" style="max-height:420px;overflow:auto"></div>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+                <h3 id="postseason-title">Championship Stage</h3>
+                <div id="postseason-view">The Top 2 from each of the 6 groups will advance to the Top 12 Championship stage.</div>
+            </div>
+        </main>
+
+        <aside class="card">
+            <div class="tabs">
+                <div class="tab active" id="tab-squad">Squad</div>
+                <div class="tab" id="tab-market">Market</div>
+                <div class="tab" id="tab-scouting">Scouting</div>
+            </div>
+
+            <div id="squad-tab" class="tab-content">
+                <h3>The Strongest Starting 15</h3>
+                <div style="margin-bottom: 12px;"><em class="small">Your highest-rated player for each position.</em></div>
+                <div class="starting-15" id="starting-15"></div>
+                <hr style="margin-top: 12px;" />
+                <h3>Full Squad</h3>
+                <div><strong id="current-team-name">-</strong></div>
+                <div style="margin-top:8px"><em class="small">Your full squad, sorted by rating.</em></div>
+                <div class="squad-list" id="squad"></div>
+            </div>
+
+            <div id="market-tab" class="tab-content" style="display:none">
+                <h3>Transfer Market</h3>
+                <div class="small">Buy / Sell players. Don't exceed your budget when buying.</div>
+                <div id="market" class="market-list" style="margin-top:8px"></div>
+            </div>
+
+            <div id="scouting-tab" class="tab-content" style="display:none">
+                <h3>Scouting Network</h3>
+                <div class="small">Discover talent across South Africa</div>
+                <div class="region-filter">
+                    <label>Region:</label>
+                    <select id="region-select">
+                        <option value="all">All Regions</option>
+                        <option value="Western Cape">Western Cape</option>
+                        <option value="Eastern Cape">Eastern Cape</option>
+                        <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+                        <option value="Gauteng">Gauteng</option>
+                        <option value="Free State">Free State</option>
+                        <option value="Mpumalanga">Mpumalanga</option>
+                        <option value="Limpopo">Limpopo</option>
+                        <option value="Northern Cape">Northern Cape</option>
+                        <option value="North West">North West</option>
+                    </select>
+                </div>
+                <div class="controls" style="margin:8px 0"><button id="scout-players" class="success">Scout New Players</button></div>
+                <div id="scout-reports" class="scout-reports"></div>
+            </div>
+        </aside>
+    </div>
+
+    <div id="notification-container"></div>
+    <footer>Built for a local amateur league. Data persists in your browser (localStorage).</footer>
+
+    <script>
+        // --- Configuration & helper data ---
+        const GROUP_SETUP = {
+            "Breelangeberg": ['Robertson', 'Worcester Villagers', 'Montagu', 'Young Hamiltons', 'Mcgregor', 'Ashton', 'Bonnievale Blue Birds', 'Touwpark', 'Montagu Villagers', 'Swellendam', 'Robertson Rangers', 'Rawsonville'],
+            "Noordweste": ['Vanrynsdorp Eagles', 'Citrusdal', 'Delicious', 'Young Spurs', 'Invincibles', 'Excelsior', 'Young Roslyns', 'Marines', 'Flying Eagles', 'Elandsbaai', 'Red Stars', 'Majestics'],
+            "Overberg": ['Botrivier', 'Safcol', 'Hawston', 'Stanford Universals', 'Caledon', 'Bredasdorp Rangers', 'Kleinmond', 'Genadendal', 'Villiersdorp', 'Sea Hawks', 'Grabouw', 'Riviersonderend'],
+            "Swartland": ['Saron', 'Wesbank', 'Abbotsdale', 'Mamre', 'Wittewater Villagers', 'Porterville', 'Good Hopes', 'Never Despair', 'Darling', 'Moorreesburg', 'Riebeeck United', 'Voorberg'],
+            "Witsentraal": ['Roses United', 'Hillcrest', 'Ceres', 'Bella Vista', 'Newtons', 'Delicious Ceres', 'Hamlet', 'Newton Villagers', 'Wolseley', 'Paarl Evergreens', 'Young Blues', 'Temperance'],
+            "Weskus": ['Saldanha', 'Velddrif', 'Vredenburg', 'St Helena', 'Young Hearts', 'Langebaan', 'Paternoster', 'Hopefield', 'Piketberg', 'Goedverwacht', 'Steenberg Cove', 'Clanwilliam']
+        };
+        const QUALIFICATION_SPOTS = 2;
+        const RETIREMENT_AGE = 38;
+
+        const POSITIONS = ['Prop', 'Hooker', 'Lock', 'Flanker', 'Number 8', 'Scrum-half', 'Fly-half', 'Centre', 'Wing', 'Fullback'];
+        const FIRST_NAMES = ['Themba', 'Sipho', 'Mandla', 'Tebogo', 'Kagiso', 'Thabo', 'Pieter', 'Johan', 'Francois', 'Adriaan', 'Hendrik', 'Jannie', 'Cobus', 'Morné', 'Handré', 'Faf', 'Trevor', 'Byron', 'Kyle', 'Bradley', 'Warren', 'Dean', 'Gareth', 'Ryan', 'Neil', 'Grant', 'Ashwin', 'Imran', 'Yusuf', 'Faried', 'Ebrahim', 'Rasheed', 'James', 'Michael', 'David', 'John', 'Robert', 'William', 'Christopher', 'Matthew'];
+        const LAST_NAMES = ['Mthembu', 'Nkomo', 'Dlamini', 'Mahlangu', 'Mokoena', 'Sithole', 'van der Merwe', 'Botha', 'van Wyk', 'Pretorius', 'Smith', 'Joubert', 'du Plessis', 'Steyn', 'Venter', 'Williams', 'Johnson', 'Brown', 'Jones', 'Davis', 'Miller', 'Wilson', 'Patel', 'Singh', 'Naidoo', 'Reddy', 'Maharaj', 'Pillay', 'Adams', 'February', 'Isaacs', 'Daniels', 'Jacobs', 'Joseph', 'September'];
+        const SA_REGIONS = ['Western Cape', 'Eastern Cape', 'KwaZulu-Natal', 'Gauteng', 'Free State', 'Mpumalanga', 'Limpopo', 'Northern Cape', 'North West'];
+        const STARTING_POSITIONS = { 'Prop': 2, 'Hooker': 1, 'Lock': 2, 'Flanker': 2, 'Number 8': 1, 'Scrum-half': 1, 'Fly-half': 1, 'Centre': 2, 'Wing': 2, 'Fullback': 1 };
+        
+        const STORAGE_KEY = 'wc_rugby_league_groups_v1';
+        let state = null;
+        let activeTab = 'squad';
+        let activeGroupId = null;
+
+        // --- Utilities ---
+        function randChoice(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+        function rint(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+        function cryptoRandomId() { return Math.random().toString(36).slice(2, 9); }
+        function formatCurrency(amount) { return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', minimumFractionDigits: 0 }).format(amount); }
+        function createPlayer(region = null) {
+            const fn = randChoice(FIRST_NAMES), ln = randChoice(LAST_NAMES), pos = randChoice(POSITIONS);
+            return { id: cryptoRandomId(), name: fn, surname: ln, position: pos, height: rint(170, 205), weight: rint(80, 120), rating: rint(45, 90), age: rint(18, 34), region: region || randChoice(SA_REGIONS) };
+        }
+
+        // --- Notifications ---
+        function showNotification(message) {
+            const container = document.getElementById('notification-container');
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            container.appendChild(notification);
+            setTimeout(() => { notification.remove(); }, 4000);
+        }
+
+        // --- League Initialization ---
+        function newLeague() {
+            const groups = Object.keys(GROUP_SETUP).map(groupName => {
+                const teams = GROUP_SETUP[groupName].map(name => ({
+                    id: cryptoRandomId(), name, players: Array.from({ length: 30 }, () => createPlayer('Western Cape')),
+                    budget: 500000, stats: initialStats()
+                }));
+                const fixtures = generateFixtures(teams.map(t => t.name));
+                return { id: cryptoRandomId(), name: groupName, teams, fixtures };
+            });
+            activeGroupId = groups[0].id;
+            return {
+                groups, season: 1, week: 1,
+                managerTeamId: groups[0].teams[0].id,
+                market: [], scoutReports: [],
+                championshipStage: null, knockoutStage: null
+            };
+        }
+
+        function initialStats() { return { played: 0, w: 0, d: 0, l: 0, for: 0, against: 0, bonus: 0, points: 0, pointsDiff: 0 }; }
+
+        function generateFixtures(teamNames) {
+            const n = teamNames.length, teams = teamNames.slice();
+            if (n % 2 === 1) teams.push('BYE');
+            const rounds = [], m = teams.length;
+            for (let r = 0; r < m - 1; r++) {
+                const round = [];
+                for (let i = 0; i < m / 2; i++) {
+                    const t1 = teams[i], t2 = teams[m - 1 - i];
+                    if (t1 !== 'BYE' && t2 !== 'BYE') round.push({ home: t1, away: t2, played: false, homeScore: null, awayScore: null, homeTries: 0, awayTries: 0 });
+                }
+                rounds.push(round);
+                teams.splice(1, 0, teams.pop());
+            }
+            const rounds2 = rounds.map(r => r.map(m => ({ ...m, home: m.away, away: m.home })));
+            return rounds.concat(rounds2).flat();
+        }
+
+        function generateSingleRoundRobinFixtures(teamNames) {
+            const n = teamNames.length, teams = teamNames.slice();
+            if (n % 2 === 1) teams.push('BYE');
+            const rounds = [], m = teams.length;
+            for (let r = 0; r < m - 1; r++) {
+                const round = [];
+                for (let i = 0; i < m / 2; i++) {
+                    const t1 = teams[i], t2 = teams[m - 1 - i];
+                    if (t1 !== 'BYE' && t2 !== 'BYE') {
+                         round.push({ home: t1, away: t2, played: false, homeScore: null, awayScore: null, homeTries: 0, awayTries: 0 });
+                    }
+                }
+                rounds.push(round);
+                teams.splice(1, 0, teams.pop());
+            }
+            return rounds.flat();
+        }
+
+        // --- Persistence ---
+        function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+        function load() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : null;
+        }
+
+        // --- Season Progression ---
+        function setupChampionshipStage() {
+            showNotification("The group stage has concluded. The Top 12 will now begin!");
+            const qualifiers = [];
+            state.groups.forEach(group => {
+                const sortedTeams = group.teams.slice().sort((a,b) => b.stats.points - a.stats.points || (b.stats.pointsDiff - a.stats.pointsDiff));
+                qualifiers.push(...sortedTeams.slice(0, QUALIFICATION_SPOTS));
+            });
+            
+            const groupA_teams = [qualifiers[0], qualifiers[3], qualifiers[4], qualifiers[7], qualifiers[8], qualifiers[11]];
+            const groupB_teams = [qualifiers[1], qualifiers[2], qualifiers[5], qualifiers[6], qualifiers[9], qualifiers[10]];
+
+            groupA_teams.forEach(t => findTeamById(t.id).stats = initialStats());
+            groupB_teams.forEach(t => findTeamById(t.id).stats = initialStats());
+            
+            state.championshipStage = {
+                groups: [
+                    { id: cryptoRandomId(), name: "Championship Group A", teams: groupA_teams, fixtures: generateSingleRoundRobinFixtures(groupA_teams.map(t => t.name)) },
+                    { id: cryptoRandomId(), name: "Championship Group B", teams: groupB_teams, fixtures: generateSingleRoundRobinFixtures(groupB_teams.map(t => t.name)) }
+                ]
+            };
+        }
+
+        function setupKnockoutStage() {
+            showNotification("The Top 12 stage is complete. The semi-finals are set!");
+            const champGroups = state.championshipStage.groups;
+            const groupA_sorted = champGroups[0].teams.slice().sort((a,b) => b.stats.points - a.stats.points || (b.stats.pointsDiff - a.stats.pointsDiff));
+            const groupB_sorted = champGroups[1].teams.slice().sort((a,b) => b.stats.points - a.stats.points || (b.stats.pointsDiff - a.stats.pointsDiff));
+            const semi1 = simulateCupMatch(groupA_sorted[0].name, groupB_sorted[1].name);
+            const semi2 = simulateCupMatch(groupB_sorted[0].name, groupA_sorted[1].name);
+            const final = simulateCupMatch(semi1.winner, semi2.winner);
+            state.knockoutStage = { semi1, semi2, final };
+            showNotification(`${final.winner} are the champions!`);
+        }
+
+        // --- Week/Season Management ---
+        function simulateWeek() {
+            if (state.knockoutStage) { showNotification('The season has ended. Start a new season.'); return; }
+
+            if (state.championshipStage) {
+                const allChampFixturesPlayed = state.championshipStage.groups.every(g => g.fixtures.every(f => f.played));
+                if (allChampFixturesPlayed) {
+                    setupKnockoutStage();
+                } else {
+                    state.championshipStage.groups.forEach(group => {
+                        const fixturesThisWeek = group.fixtures.filter(f => !f.played).slice(0, 3);
+                        fixturesThisWeek.forEach(fixture => simulateMatch(group, fixture));
+                    });
+                    showNotification(`Championship Week matches complete!`);
+                }
+            } else {
+                const allGroupFixturesPlayed = state.groups.every(g => g.fixtures.every(f => f.played));
+                if (allGroupFixturesPlayed) {
+                    setupChampionshipStage();
+                } else {
+                    state.groups.forEach(group => {
+                        const fixturesThisWeek = group.fixtures.filter(f => !f.played).slice(0, 6);
+                        fixturesThisWeek.forEach(fixture => simulateMatch(group, fixture));
+                    });
+                     showNotification(`Group Stage Week matches complete!`);
+                }
+            }
+
+            state.week++;
+            advancePlayers();
+            simulateAITeamManagement();
+            save();
+            renderAll();
+        }
+        
+        function advancePlayers() {
+            getAllTeams().forEach(team => {
+                const retiringPlayers = [];
+                team.players.forEach(player => {
+                    if (Math.random() < 0.2) player.age++;
+                    if (player.age < 25) player.rating = Math.min(95, player.rating + rint(0, 2));
+                    else if (player.age >= 25 && player.age < 32) player.rating = Math.min(95, player.rating + rint(-1, 1));
+                    else player.rating = Math.max(30, player.rating + rint(-3, 0));
+                    if (player.age >= RETIREMENT_AGE) retiringPlayers.push(player);
+                });
+
+                if (retiringPlayers.length > 0) {
+                    team.players = team.players.filter(p => p.age < RETIREMENT_AGE);
+                    if (team.id === state.managerTeamId) {
+                        retiringPlayers.forEach(p => showNotification(`${p.name} ${p.surname} (${p.age}) has retired.`));
+                    }
+                }
+            });
+        }
+
+        function simulateAITeamManagement() {
+            getAllTeams().forEach(team => {
+                if (team.id === state.managerTeamId) return;
+                const teamStr = teamStrength(team.name);
+                
+                team.players.forEach(player => {
+                    if (player.age > 30 && player.rating < teamStr - 5 && Math.random() < 0.1) {
+                       putPlayerOnMarket(team.id, player.id);
+                    }
+                });
+
+                state.market.forEach(item => {
+                    if (item.player.rating > teamStr && team.budget > item.price && Math.random() < 0.2) {
+                        buyPlayer(item.player.id, team.id);
+                    }
+                });
+
+                if (team.players.length < 35 && Math.random() < 0.05) {
+                    const youthPlayer = createPlayer();
+                    youthPlayer.age = rint(18, 20);
+                    youthPlayer.rating = rint(50, 70);
+                    if (team.budget > 5000) { team.budget -= 5000; team.players.push(youthPlayer); }
+                }
+            });
+        }
+
+        function nextSeason() {
+            if (!confirm('Start next season? This will reset all fixtures and stats.')) return;
+            state.season++; state.week = 1; state.championshipStage = null; state.knockoutStage = null;
+            state.market = []; state.scoutReports = [];
+            state.groups.forEach(group => {
+                group.teams.forEach(team => { team.stats = initialStats(); team.budget += 100000; });
+                group.fixtures = generateFixtures(group.teams.map(t => t.name));
+            });
+            save(); renderAll();
+            showNotification(`Welcome to Season ${state.season}!`);
+        }
+
+        // --- Scouting System ---
+        function scoutPlayers() {
+            const team = findTeamById(state.managerTeamId);
+            const cost = 5000;
+            if (team.budget < cost) { showNotification('Insufficient budget to scout.'); return; }
+            team.budget -= cost;
+            const region = document.getElementById('region-select').value;
+            const numScouts = rint(2, 5);
+            const newReports = Array.from({length: numScouts}, () => {
+                const player = createPlayer(region === 'all' ? null : region);
+                return { player, scoutRating: rint(1,5), estimatedValue: Math.floor(player.rating * 600 + Math.random() * 15000), weekFound: state.week };
+            });
+            state.scoutReports = newReports.concat(state.scoutReports).slice(0, 10);
+            save(); renderScoutReports(); renderBudget();
+            showNotification(`Found ${numScouts} potential players!`);
+        }
+
+        function signScoutedPlayer(playerId) {
+            const reportIdx = state.scoutReports.findIndex(r => r.player.id === playerId); if (reportIdx === -1) return;
+            const report = state.scoutReports[reportIdx];
+            const team = findTeamById(state.managerTeamId);
+            if (team.budget < report.estimatedValue) { showNotification('Insufficient budget to sign this player.'); return; }
+            team.budget -= report.estimatedValue;
+            team.players.push(report.player);
+            state.scoutReports.splice(reportIdx, 1);
+            save(); renderSquad(); renderScoutReports(); renderBudget();
+            showNotification(`Signed ${report.player.name} ${report.player.surname}!`);
+        }
+        
+        // --- Helpers ---
+        function getAllTeams() { return state.groups.flatMap(d => d.teams); }
+        function findTeamById(id) { return getAllTeams().find(t => t.id === id); }
+        function findTeamByName(name) { return getAllTeams().find(t => t.name === name); }
+
+        // --- Tab System ---
+        function switchTab(tabName) {
+            activeTab = tabName;
+            document.querySelectorAll('aside.card .tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
+            document.getElementById(`${tabName}-tab`).style.display = 'block';
+        }
+
+        function switchGroupTab(groupId) {
+            activeGroupId = groupId;
+            document.querySelectorAll('#group-tabs .tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`#group-tabs .tab[data-id="${groupId}"]`).classList.add('active');
+            renderGroupView();
+        }
+
+        // --- Startup & Event Listeners ---
+        function init() {
+            state = load() || newLeague();
+            if (!state.groups) state = newLeague(); 
+            activeGroupId = state.groups[0].id;
+            renderAll();
+            setupEventListeners();
+        }
+
+        function renderAll() {
+            renderTeamSelect();
+            renderTeamsList();
+            renderGroupTabs();
+            renderGroupView();
+            renderSquad();
+            renderMarket();
+            renderScoutReports();
+            renderBudget();
+            renderTeamName();
+            renderWeekStatus();
+            document.getElementById('season').textContent = state.season;
+            renderPostSeasonView();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('sim-week').addEventListener('click', simulateWeek);
+            document.getElementById('reset').addEventListener('click', () => { if (confirm('Reset league? This clears saved data.')) { localStorage.removeItem(STORAGE_KEY); init(); location.reload(); } });
+            document.getElementById('select-team').addEventListener('change', e => { state.managerTeamId = e.target.value; save(); renderAll(); });
+            document.getElementById('next-season').addEventListener('click', nextSeason);
+            document.getElementById('scout-players').addEventListener('click', scoutPlayers);
+            document.getElementById('region-select').addEventListener('change', renderScoutReports);
+            document.getElementById('tab-squad').addEventListener('click', () => switchTab('squad'));
+            document.getElementById('tab-market').addEventListener('click', () => switchTab('market'));
+            document.getElementById('tab-scouting').addEventListener('click', () => switchTab('scouting'));
+        }
+
+        // --- Rendering Functions ---
+        function renderGroupView() {
+            const group = state.groups.find(d => d.id === activeGroupId);
+            if (!group) return;
+            document.getElementById('group-title').textContent = group.name + " Table";
+            renderTable(group, document.getElementById('table-container'));
+            renderFixtures(group);
+        }
+
+        function renderGroupTabs() {
+            const container = document.getElementById('group-tabs');
+            container.innerHTML = '';
+            state.groups.forEach(g => {
+                const tab = document.createElement('div');
+                tab.className = 'tab';
+                tab.textContent = g.name;
+                tab.dataset.id = g.id;
+                if (g.id === activeGroupId) tab.classList.add('active');
+                tab.addEventListener('click', () => switchGroupTab(g.id));
+                container.appendChild(tab);
+            });
+        }
+
+        function renderWeekStatus() {
+            document.getElementById('current-week').textContent = state.week;
+            document.getElementById('week-status').textContent = 'Simulate to advance';
+        }
+
+        function renderScoutReports() {
+            const el = document.getElementById('scout-reports'); el.innerHTML = '';
+            const region = document.getElementById('region-select').value;
+            let reports = (region !== 'all') ? state.scoutReports.filter(r => r.player.region === region) : state.scoutReports;
+            if (reports.length === 0) { el.innerHTML = '<div class="small">No scout reports available.</div>'; return; }
+            reports.forEach(report => {
+                const div = document.createElement('div'); div.className = 'scout-card card';
+                div.innerHTML = `
+                    <div><strong>${report.player.name} ${report.player.surname}</strong></div>
+                    <div class="small">${report.player.position} • ${report.player.region} • ${report.player.age} yo • Rating: ${report.player.rating}</div>
+                    <div class="small">Value: ${formatCurrency(report.estimatedValue)}</div>
+                `;
+                const btn = document.createElement('button'); btn.textContent = 'Sign Player'; btn.style.marginTop = '8px';
+                btn.addEventListener('click', () => signScoutedPlayer(report.player.id));
+                div.appendChild(btn); el.appendChild(div);
+            });
+        }
+
+        function renderTeamSelect() {
+            const sel = document.getElementById('select-team'); sel.innerHTML = '';
+            getAllTeams().sort((a,b) => a.name.localeCompare(b.name)).forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id; opt.textContent = t.name;
+                if (state.managerTeamId === t.id) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        }
+
+        function renderTeamName() {
+            const t = findTeamById(state.managerTeamId);
+            document.getElementById('current-team-name').textContent = t ? t.name : '-';
+        }
+
+        function renderBudget() {
+            const t = findTeamById(state.managerTeamId);
+            document.getElementById('budget').textContent = t ? formatCurrency(t.budget) : '-';
+        }
+
+        function renderTeamsList() {
+            const el = document.getElementById('teams-list'); el.innerHTML = '';
+            state.groups.forEach(group => {
+                const header = document.createElement('h5'); header.textContent = group.name; header.style.margin = '10px 0 4px 0';
+                el.appendChild(header);
+                group.teams.sort((a,b) => a.name.localeCompare(b.name)).forEach(t => {
+                    const avgRating = teamStrength(t.name);
+                    const div = document.createElement('div'); div.className = 'team-item';
+                    div.innerHTML = `<strong>${t.name}</strong> <span class="small">(${avgRating} OVR)</span>`;
+                    div.addEventListener('click', () => { state.managerTeamId = t.id; save(); renderAll(); });
+                    if (t.id === state.managerTeamId) div.classList.add('selected');
+                    el.appendChild(div);
+                });
+            });
+        }
+
+        function renderTable(group, container) {
+            container = container || document.getElementById('table-container');
+            const tableData = group.teams.map(t => ({...findTeamById(t.id)})); // get fresh data
+            tableData.sort((a, b) => b.stats.points - a.stats.points || (b.stats.pointsDiff) - (a.stats.pointsDiff) || b.stats.for - a.stats.for);
+            
+            const tbl = document.createElement('table');
+            tbl.innerHTML = `<thead><tr><th>#</th><th>Team</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>PD</th><th>BP</th><th>PTS</th></tr></thead>`;
+            const tbody = document.createElement('tbody');
+            tableData.forEach((t, i) => {
+                const tr = document.createElement('tr');
+                if (i < QUALIFICATION_SPOTS) tr.classList.add('qualification-spot');
+                tr.innerHTML = `<td>${i + 1}</td><td>${t.name}</td><td>${t.stats.played}</td><td>${t.stats.w}</td><td>${t.stats.d}</td><td>${t.stats.l}</td><td>${t.stats.pointsDiff}</td><td>${t.stats.bonus}</td><td>${t.stats.points}</td>`;
+                tbody.appendChild(tr);
+            });
+            tbl.appendChild(tbody);
+            container.innerHTML = '';
+            container.appendChild(tbl);
+        }
+
+        function renderFixtures(group) {
+            const cont = document.getElementById('fixtures'); cont.innerHTML = '';
+            let displayList = group.fixtures.filter(f => !f.played);
+            if (displayList.length === 0) { cont.innerHTML = `<div class="small">No pending fixtures for this group.</div>`; return; }
+            const fixturesPerWeek = group.teams.length / 2;
+            const fixturesToShow = displayList.slice(0, fixturesPerWeek);
+
+            fixturesToShow.forEach(f => {
+                const d = document.createElement('div'); d.className = 'fixture card';
+                const status = f.played ? `${f.homeScore} - ${f.awayScore}` : '<em class="small">pending</em>';
+                d.innerHTML = `<div><strong>${f.home}</strong> vs <strong>${f.away}</strong></div><div>${status}</div>`;
+                cont.appendChild(d);
+            });
+        }
+
+        function renderSquad() {
+            const box = document.getElementById('squad'), s15box = document.getElementById('starting-15');
+            box.innerHTML = ''; s15box.innerHTML = '';
+            const team = findTeamById(state.managerTeamId); if (!team) return;
+            const sortedPlayers = [...team.players].sort((a, b) => b.rating - a.rating);
+            
+            const positionsTaken = new Set();
+            POSITIONS.forEach(pos => {
+                let count = 0;
+                sortedPlayers.forEach(p => {
+                    if (p.position === pos && !positionsTaken.has(p.id) && count < STARTING_POSITIONS[pos]) {
+                        const playerDiv = document.createElement('div'); playerDiv.className = 'starting-15-player';
+                        playerDiv.innerHTML = `<span class="rating">${p.rating}</span> <strong>${p.name[0]}. ${p.surname}</strong> <span class="small">(${p.position})</span>`;
+                        s15box.appendChild(playerDiv); positionsTaken.add(p.id); count++;
+                    }
+                });
+            });
+
+            sortedPlayers.forEach(p => {
+                const row = document.createElement('div'); row.className = 'player-row card';
+                row.innerHTML = `<div><strong>${p.name} ${p.surname}</strong> (${p.position})<div class="small">${p.age} yo • rating ${p.rating}</div></div>`;
+                const btn = document.createElement('button'); btn.textContent = 'Sell'; btn.className = 'secondary';
+                btn.addEventListener('click', () => { putPlayerOnMarket(team.id, p.id); });
+                row.appendChild(btn); box.appendChild(row);
+            });
+            renderBudget();
+        }
+
+        function renderMarket() {
+            const el = document.getElementById('market'); el.innerHTML = '';
+            state.market.forEach(item => {
+                const row = document.createElement('div'); row.className = 'market-row card';
+                row.innerHTML = `<div><strong>${item.player.name} ${item.player.surname}</strong><div class="small">${item.player.position} • rating ${item.player.rating} • from ${item.from}</div></div><div>${formatCurrency(item.price)}</div>`;
+                const btn = document.createElement('button'); btn.textContent = 'Buy';
+                const buyingTeam = findTeamById(state.managerTeamId);
+                if (buyingTeam.budget < item.price) btn.disabled = true;
+                btn.addEventListener('click', () => buyPlayer(item.player.id, state.managerTeamId));
+                row.appendChild(btn); el.appendChild(row);
+            });
+            if (state.market.length === 0) el.innerHTML = '<div class="small">No players on the market.</div>';
+        }
+
+        function renderPostSeasonView() {
+            const el = document.getElementById('postseason-view'); el.innerHTML = '';
+            const title = document.getElementById('postseason-title');
+
+            if (state.knockoutStage) {
+                title.textContent = "Knockout Stage Results";
+                const { semi1: s1, semi2: s2, final: f } = state.knockoutStage;
+                el.innerHTML = `<div class="card small">Semi 1: ${s1.home} ${s1.homeScore} - ${s1.awayScore} ${s1.away} → <strong>${s1.winner}</strong></div>
+                                <div class="card small" style="margin-top:6px">Semi 2: ${s2.home} ${s2.homeScore} - ${s2.awayScore} ${s2.away} → <strong>${s2.winner}</strong></div>
+                                <div class="card small" style="margin-top:8px">Final: ${f.home} ${f.homeScore} - ${f.awayScore} ${f.away} → 🏆 <strong>${f.winner}</strong></div>`;
+            } else if (state.championshipStage) {
+                title.textContent = "Top 12 Championship";
+                state.championshipStage.groups.forEach(group => {
+                    const groupEl = document.createElement('div');
+                    groupEl.innerHTML = `<h5 style="margin-top:10px; margin-bottom: 5px;">${group.name}</h5>`;
+                    const tableContainer = document.createElement('div');
+                    renderTable(group, tableContainer);
+                    groupEl.appendChild(tableContainer);
+                    el.appendChild(groupEl);
+                });
+            } else {
+                title.textContent = "Championship Stage";
+                el.textContent = 'The Top 2 from each of the 6 groups will advance to the Top 12 Championship stage.';
+            }
+        }
+
+        // --- Transfer & Match Logic ---
+        function putPlayerOnMarket(teamId, playerId) {
+            const team = findTeamById(teamId);
+            if (!team || team.players.length <= 22) return;
+            const idx = team.players.findIndex(p => p.id === playerId); if (idx === -1) return;
+            const player = team.players[idx];
+            const price = Math.max(5000, Math.floor(player.rating * 500 + Math.random() * 20000));
+            team.players.splice(idx, 1);
+            state.market.push({ player, price, from: team.name, fromId: teamId });
+            if (team.id === state.managerTeamId) {
+                save(); renderSquad(); renderMarket(); renderTeamsList();
+                showNotification(`${player.name} ${player.surname} listed for ${formatCurrency(price)}`);
+            }
+        }
+
+        function buyPlayer(playerId, buyingTeamId) {
+            const itemIdx = state.market.findIndex(it => it.player.id === playerId); if (itemIdx === -1) return;
+            const item = state.market[itemIdx];
+            const buyingTeam = findTeamById(buyingTeamId);
+            if (!buyingTeam || buyingTeam.budget < item.price) {
+                if(buyingTeamId === state.managerTeamId) showNotification('Insufficient budget.');
+                return;
+            }
+            buyingTeam.budget -= item.price;
+            buyingTeam.players.push(item.player);
+            const seller = findTeamByName(item.from);
+            if (seller) seller.budget += item.price;
+            state.market.splice(itemIdx, 1);
+
+            if (buyingTeamId === state.managerTeamId) {
+                save(); renderSquad(); renderMarket(); renderTeamsList(); renderBudget();
+                showNotification(`You bought ${item.player.name} ${item.player.surname}.`);
+            }
+        }
+        
+        function teamStrength(teamName) {
+            const t = findTeamByName(teamName);
+            if (!t || t.players.length === 0) return 60;
+            const sortedPlayers = [...t.players].sort((a, b) => b.rating - a.rating);
+            const top15 = sortedPlayers.slice(0, 15);
+            if (top15.length === 0) return 50;
+            const avg = top15.reduce((s, p) => s + p.rating, 0) / top15.length;
+            return Math.round(avg);
+        }
+
+        function simulateMatch(group, f) {
+            if (!f || f.played) return;
+            const homeStr = teamStrength(f.home) + 3, awayStr = teamStrength(f.away);
+            const homeTries = Math.max(0, Math.round(homeStr / 22 + (Math.random() - 0.5))), awayTries = Math.max(0, Math.round(awayStr / 22 + (Math.random() - 0.5)));
+            const homePens = rint(0, 3), awayPens = rint(0, 3);
+            const homeConv = rint(0, homeTries), awayConv = rint(0, awayTries);
+            f.homeScore = (homeTries * 5) + (homeConv * 2) + (homePens * 3);
+            f.awayScore = (awayTries * 5) + (awayConv * 2) + (awayPens * 3);
+            f.homeTries = homeTries; f.awayTries = awayTries; f.played = true;
+            applyMatchToStats(f.home, f.away, f.homeScore, f.awayScore, homeTries, awayTries);
+        }
+
+        function applyMatchToStats(home, away, hs, as, ht, at) {
+            const homeTeam = findTeamByName(home), awayTeam = findTeamByName(away);
+            const htats = homeTeam.stats, atats = awayTeam.stats;
+            htats.played++; atats.played++;
+            htats.for += hs; htats.against += as; atats.for += as; atats.against += hs;
+            htats.pointsDiff = htats.for - htats.against; atats.pointsDiff = atats.for - atats.against;
+            if (hs > as) { htats.w++; atats.l++; htats.points += 4; }
+            else if (hs < as) { atats.w++; htats.l++; atats.points += 4; }
+            else { htats.d++; atats.d++; htats.points += 2; atats.points += 2; }
+            if (ht >= 4) { htats.bonus++; htats.points++; }
+            if (at >= 4) { atats.bonus++; atats.points++; }
+            if (hs < as && (as - hs) <= 7) { htats.bonus++; htats.points++; }
+            if (as < hs && (hs - as) <= 7) { atats.bonus++; atats.points++; }
+        }
+
+        function simulateCupMatch(home, away) {
+            const homeStr = teamStrength(home) + 3, awayStr = teamStrength(away);
+            let homeScore = 0, awayScore = 0;
+            while (homeScore === awayScore) {
+                const homeTries = Math.max(0, Math.round(homeStr / 22 + (Math.random() - 0.5))), awayTries = Math.max(0, Math.round(awayStr / 22 + (Math.random() - 0.5)));
+                homeScore = (homeTries * 5) + (rint(0, homeTries) * 2) + (rint(0, 3) * 3);
+                awayScore = (awayTries * 5) + (rint(0, awayTries) * 2) + (rint(0, 3) * 3);
+            }
+            return { home, away, homeScore, awayScore, winner: homeScore > awayScore ? home : away };
+        }
+
+        init();
+    </script>
+</body>
+</html>
